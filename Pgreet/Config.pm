@@ -38,9 +38,9 @@ package Pgreet::Config;
 # It provides for systematic updating of configuration information,
 # interrupt handling, and so on.
 ######################################################################
-# $Id: Config.pm,v 1.17 2003/08/30 23:21:51 elagache Exp $
+# $Id: Config.pm,v 1.21 2003/09/26 20:55:02 elagache Exp $
 
-$VERSION = "0.9.1"; # update after release
+$VERSION = "0.9.2"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -182,13 +182,15 @@ sub new {
 
   bless $self, $class;
 
+  # If we have an existing Error object, bind that to object.
   if (defined($Pg_error)) {
 	$self->{'Pg_error'} = $Pg_error;
   }
+
+  # Set value of configuration file.
   $self->{'config_file'} = $config_file;
 
   $config_hash = $self->_read_config_file($config_file);
-
 
   # Do we have a default configuration to merge into this object?
   if(defined($default_config)) {
@@ -198,11 +200,11 @@ sub new {
 	$self->{'config'} = $config_hash;
 	return($self);
   }
-
-  # If opening default configuration fails - returns 0 (false).
+  # Else if we have a configuration hash, set that and return object ref.
   elsif ($config_hash) {
 	$self->{'config'} = $config_hash;
 	return($self);
+  # If opening default configuration fails - returns 0 (false).
   } else {
 	return(0);
   }
@@ -210,7 +212,7 @@ sub new {
 
 sub add_error_obj {
 #
-# This is the first module to be loaded, so it cannot
+# Since this is the first module to be loaded, so it cannot
 # depend on a error object existing when first created.
 # This method attaches an error object once Penguin
 # Greetings has bootstrapped itself.
@@ -255,6 +257,7 @@ sub _read_config_file {
 
   # Attach hash to object and return.
   return($config_ref);
+
 } # End sub _read_config_file
 
 sub access {
@@ -327,6 +330,7 @@ sub is_valid_site {
 	return(0);
   }
 }
+
 sub _merge_configs {
 #
 # Internal method to take two configuration hashes and
@@ -429,12 +433,9 @@ sub _int_scalar_to_array {
 	foreach my $element (keys(%{$config_piece})) {
 	  $self->_int_scalar_to_array($config_piece->{$element});
 	}
-  } else {
-	die join('', "Don't know what this is: ", $config_piece, " ref of ", ref($config_piece));
   }
 
-
-}
+} # End: sub _int_scalar_to_array
 
 sub _swap_arrays_for_scalars {
 #
@@ -458,7 +459,7 @@ sub _swap_arrays_for_scalars {
 	}
   }
   delete($config_piece->{'Force_to_array'});
-}
+} # End: sub _swap_arrays_for_scalars
 
 sub chk_params {
 #
@@ -537,7 +538,7 @@ Pgreet::Config - Configuration object for Penguin Greetings.
   $Pg_config->access('config_parameter');
   $Pg_config->access('config_parameter', $Value_to_set_parameter_to);
   $Pg_config->get_hash();
-  $Pg_config->put_hash();
+  $Pg_config->put_hash($new_hash);
 
   # Other Misc. methods:
   $Pg_default_config->is_valid_site($site);
@@ -621,7 +622,9 @@ C<today_pause>, C<data_file_prefix>, C<state_file_prefix>,
 C<delete_state>, C<scheduled_email_queue>, C<pgreet_uid>,
 C<pgreet_gid>, C<SMTP_server>, C<user_access>, C<User_Pgreets> and
 C<flush_on_cycle>.  Attempting to change these values will cause an
-error to be generated via the attached Penguin Greetings error object.
+error to be generated via the attached Penguin Greetings error object,
+and calling application will be terminated via the C<Pgreet::Error>
+object.
 
 =head1 METHODS
 
@@ -754,11 +757,11 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.1
+0.9.2
 
 =head1 SEE ALSO
 
-L<Config::General>, L<Pgreet>, L<Pgreet::Error>
+L<Config::General>, L<Pgreet>, L<Pgreet::Error>, L<Pgreet::CGIUtils>
 
 =cut
 

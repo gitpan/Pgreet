@@ -23,9 +23,12 @@
 #     http://sourceforge.net/projects/pgreet/
 #
 ######################################################################
-# $Id: Pgreet.t,v 1.1 2003/08/22 18:24:37 elagache Exp $
+# $Id: Pgreet.t,v 1.3 2003/09/19 22:32:46 elagache Exp $
 #
-use Test::More tests => 13;
+use Test::More tests => 16;
+use File::Temp qw(tempdir);
+use File::Basename;
+
 
 
 # Global declarations
@@ -35,7 +38,7 @@ our ($Pg_config, $Pg_error, $Pg_obj);
 our $Test_state_hash = { varstring => "PgTemplateTest=true",
 						 hiddenfields =>  "<!-- Templatetest hiddenfields -->",
 						 sender_name => "Test Sender Name",
-						 sender_email => "test@PgTemplateTest.org"
+						 sender_email => "test\@PgTemplateTest.org"
 					   };
 
 $state_file = "Test_state_file.txt";
@@ -48,12 +51,10 @@ sub make_tmp_dir {
 # in which to drop a temporary configuration file
 # and create state files.
 #
-  # Try to locate a directory to create test values in.
-  $TmpDir = exists($ENV{'TMPDIR'})?$ENV{'TMPDIR'}:"/tmp";
-  unless(-d $TmpDir) {
-	$TmpDir = ".";
-  }
-  unless(mkdir("$TmpDir/PgreetTestingDir")) {
+  # Try to create a directory to create test values in.
+  unless (($TmpDir = tempdir("PgreetTestingDirXXXX", CLEANUP => 1)) and
+		  (-d $TmpDir)
+		  ){
 	$ErrorMessage = "Cannot create test directory ... Try setting TmpDir";
 	return(0);
   }
@@ -67,7 +68,7 @@ sub create_config_file {
 # Penguin Greeting configuration file for testing
 # the modules.
 #
-  $config_file = "$TmpDir/PgreetTestingDir/pgreet.conf";
+  $config_file = "$TmpDir/pgreet.conf";
   unless (open(CONFIG, ">$config_file")) {
 	$ErrorMessage = "Unable to create temporary configuration file";
 	return(0);
@@ -81,22 +82,11 @@ EOF
 	close(CONFIG);
 }
 
-sub post_test_cleanup {
-#
-# Subroutine to delete files created by tests
-#
-  my $state_file_path = shift;
-
-  return(
-		 unlink($state_file_path, $config_file) and
-		 rmdir ("$TmpDir/PgreetTestingDir")
-		);
-}
-
 # Need modules to run this puppy
 BEGIN { use_ok( 'Pgreet' ); }
 BEGIN { use_ok( 'Pgreet::Config' ); }
 BEGIN { use_ok( 'Pgreet::Error' ); }
+BEGIN { use_ok( 'Pgreet::CGIUtils'); }
 
 # Create a temporary environment to run tests in
 ok(make_tmp_dir() and create_config_file(),
@@ -106,6 +96,9 @@ ok(make_tmp_dir() and create_config_file(),
 ########## MAIN SCRIPT ###########
 
 {
+  my $cgi_script = basename($0);
+  my $query = 0;
+
   # Create objects for tests
   ok($Pg_config = new Pgreet::Config($config_file),
 	 "Create Pgreet::Config object");
@@ -115,6 +108,10 @@ ok(make_tmp_dir() and create_config_file(),
 	 "Attach Error object to configuration object");
   ok($Pg_obj = new Pgreet($Pg_config, $Pg_error, 'App'),
 	 "Create Pgreet object");
+  ok($Pg_cgi = new Pgreet::CGIUtils($Pg_config, $cgi_script, $query),
+	 "Create Pgreet::CGIUtils object");
+  ok($Pg_error->add_cgi_obj($Pg_cgi),
+	 "Adding Pgreet::CGIUtils object reference to Pgreet::Error object");
 
   # Test configuration file access
   is($Pg_config->access('TestVar'), 'TestValue',
@@ -134,7 +131,4 @@ ok(make_tmp_dir() and create_config_file(),
   is_deeply($Test_state_hash, $data_hash,
 			"Compare state file data to original");
 
-  # Clean up testing files
-  post_test_cleanup($test_file_path) or
-	diag("Warning: unable to clean up test files");
 }

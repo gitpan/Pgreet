@@ -38,9 +38,9 @@ package Pgreet;
 # submodule category.
 #
 ######################################################################
-# $Id: Pgreet.pm,v 1.8 2003/08/31 02:31:18 elagache Exp $
+# $Id: Pgreet.pm,v 1.12 2003/09/26 21:11:29 elagache Exp $
 
-$VERSION = "0.9.1"; # update after release
+$VERSION = "0.9.2"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -60,9 +60,6 @@ use Embperl;
 use Data::Dumper; # Needed only for debugging.
 use Digest::MD5  qw(md5_hex);
 
-# XXX For testing only!! XXX
-use lib "/home/users/elagache/Perl_projects/pgreet/lib";
-use Pgreet::Error;
 # Perl Pragmas
 use strict;
 
@@ -103,12 +100,10 @@ sub read_state {
   my $data_hash = shift;
   my $StateFilName = shift;
 
-
   # Get other objects needed for work
   my $Pg_config = $self->{'Pg_config'};
   my $Pg_error = $self->{'Pg_error'};
 
- 
   # Misc values.
   my $StateHdl = new FileHandle;
   my $dataline;
@@ -117,7 +112,7 @@ sub read_state {
 	
   # Open file.
   unless ($StateHdl->open("$StateFilName")) {
-	$Pg_error->report('die', 20,
+	$Pg_error->report('error', 20,
 					  "can't open temporary state file: $StateFilName"
 					 );
   }
@@ -133,8 +128,9 @@ sub read_state {
 	  } else {
 		unless(($key, $value) = split(/\t/, $dataline)) {
 		  Report_error(24);
-		  $Pg_error->report('die', 24,
-							"Corrupted state data file: $StateFilName"
+		  $Pg_error->report('error', 24,
+							"Corrupted state data file: $StateFilName",
+							" Misformatted item: $dataline"
 						   );
 		}
 		  $data_hash->{$key} =$value;
@@ -144,14 +140,16 @@ sub read_state {
   # Get message lines if any.
   if ($dataline = $StateHdl->getline()) {
 	unless ($dataline =~ m/MESSAGE:/) {
-	  $Pg_error->report('die', 24,
-						"Corrupted State data file: $StateFilName"
+	  $Pg_error->report('error', 24,
+						"Corrupted State data file: $StateFilName",
+						" No MESSAGE: marker"
 					   );
 	}
 	@message_text = $StateHdl->getlines();
 	unless (scalar(@message_text)) {
-	  $Pg_error->report('die', 24,
-						"Corrupted State data file: $StateFilName"
+	  $Pg_error->report('error', 24,
+						"Corrupted State data file: $StateFilName",
+						" Corrupted message text"
 					   );
 	}
 	my $message = join('', @message_text);
@@ -163,7 +161,7 @@ sub read_state {
 	  $Pg_error->report('warn', "Unable to close file: $StateFilName");
   }
   return($data_hash);
-}
+} #End sub read_state
 
 
 sub store_state {
@@ -186,7 +184,7 @@ sub store_state {
   my $StateHdl = new FileHandle;
 
   unless ($StateHdl->open(">$StateFilName")) {
-	$Pg_error->report('die', 20,
+	$Pg_error->report('error', 20,
 					  "can't create temporary state file: $StateFilName"
 					 );
   }
@@ -206,7 +204,9 @@ sub store_state {
   $StateHdl->print("EOV\n");
 
   # Add message to file if any.
-  if (exists($data_hash->{'message'})) {
+  if (exists($data_hash->{'message'})
+	  and ($data_hash->{'message'} !~ /^\s*$/)
+     ) {
 	$StateHdl->print("MESSAGE:\n");
 	$StateHdl->print($data_hash->{'message'});
   }
@@ -219,7 +219,7 @@ sub store_state {
   }
 
   return(1);
-}
+} #End sub store_state
 
 =head1 NAME
 
@@ -241,7 +241,7 @@ The Perl module: C<Pgreet> (F<Pgreet.pm>) provides shared
 functionality for the C<Penguin Greetings> application that is not
 provided by any specific submodule.  Presently, it provide consistent
 access to the intermediate state files between the CGI Application and
-daemon.
+Penguin Greetings daemon.
 
 =head1 INITIALIZATION
 
@@ -343,11 +343,11 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.1
+0.9.2
 
 =head1 SEE ALSO
 
-L<Pgreet::Config>, L<Pgreet::Error>
+L<Pgreet::Config>, L<Pgreet::Error>, L<Pgreet::CGIUtils>
 
 =cut
 
