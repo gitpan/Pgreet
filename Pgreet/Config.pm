@@ -38,9 +38,9 @@ package Pgreet::Config;
 # It provides for systematic updating of configuration information,
 # interrupt handling, and so on.
 ######################################################################
-# $Id: Config.pm,v 1.12 2003/07/29 21:33:47 elagache Exp $
+# $Id: Config.pm,v 1.14 2003/08/20 23:27:15 elagache Exp $
 
-$VERSION = "0.8.9"; # update after release
+$VERSION = "0.9.0"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -236,7 +236,7 @@ sub is_valid_site {
   my $User_Pgreets = $self->access('User_Pgreets');
   my $Pg_error = $self->{'Pg_error'};
 
-  if (exists($User_Pgreets->{$site})) {
+  if ($User_Pgreets and exists($User_Pgreets->{$site})) {
 	return(1);
   } else {
 	$Pg_error->report('error', 4,
@@ -593,7 +593,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.8.9
+0.9.0
 
 =head1 SEE ALSO
 

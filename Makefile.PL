@@ -3,15 +3,15 @@
 # E. Lagache, 7/2003
 #
 
+# Definitions
 $DISTNAME = 'Pgreet';
-$VERSION  = "0.8.9";
+$VERSION  = "0.9.0";
 
-#--- Write the Makefile
-
+# Prerequisites
 BEGIN { require 5.8.0 }
-
 use ExtUtils::MakeMaker;
 
+#--- Write the Makefile
 WriteMakefile( # Prerequisites same as for Install.PL
 			  PREREQ_PM => {
 							'MIME::Lite' => '2.117',
@@ -22,8 +22,14 @@ WriteMakefile( # Prerequisites same as for Install.PL
 							'Digest::MD5' => '2.17',
 							'Embperl' => '2.0'
 						   },
-	VERSION   => $VERSION,
-	NAME      => $DISTNAME,
-);
+			  VERSION   => $VERSION,
+			  NAME      => $DISTNAME,	
+			  ($] >= 5.005) ? (
+							   'AUTHOR'     =>
+							   'Edouard Lagache (elagache@canebas.org)',
+							   'ABSTRACT'   =>
+							   'Support modules for Penguin Greetings'
+							  ) : (),
+			 );
 
 
