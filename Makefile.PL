@@ -5,7 +5,7 @@
 
 # Definitions
 $DISTNAME = 'Pgreet';
-$VERSION  = "0.9.7";
+$VERSION  = "0.9.8";
 
 # Prerequisites
 BEGIN { require 5.8.0 }

@@ -37,9 +37,9 @@ package Pgreet::CGIUtils;
 # In particular it houses the routines that create the transfer
 # hash reference for Embperl.
 ######################################################################
-# $Id: CGIUtils.pm,v 1.19 2004/03/05 01:08:55 elagache Exp $
+# $Id: CGIUtils.pm,v 1.21 2004/03/29 21:25:23 elagache Exp $
 
-$VERSION = "0.9.7"; # update after release
+$VERSION = "0.9.8"; # update after release
 
 # Perl modules.
 use CGI qw(:standard escape);
@@ -225,7 +225,6 @@ sub Embperl_Execute {
 	} else {
 	  @except_templates = ( $Embperl_Object->{'bypass_object'} );
 	}
-    my @except_templates = $Embperl_Object->{'bypass_object'};
 
 	foreach my $file (@except_templates) {
 	  # If this is an excluded file - forced standard processing.
@@ -418,7 +417,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.7
+0.9.8
 
 =head1 SEE ALSO
 
