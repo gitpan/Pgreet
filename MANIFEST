@@ -7,3 +7,4 @@ Pgreet/Config.pm	Penguin Greetings configuration module
 Pgreet/Error.pm		Penguin Greetings error handling module
 Pgreet/CGIUtils.pm	Penguin Greetings shared CGI utility routine module
 t/Pgreet.t			Testing script
+META.yml                                 Module meta-data (added by MakeMaker)

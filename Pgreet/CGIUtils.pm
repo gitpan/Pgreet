@@ -37,9 +37,9 @@ package Pgreet::CGIUtils;
 # In particular it houses the routines that create the transfer
 # hash reference for Embperl.
 ######################################################################
-# $Id: CGIUtils.pm,v 1.6 2003/09/26 20:16:58 elagache Exp $
+# $Id: CGIUtils.pm,v 1.8 2003/10/10 22:31:05 elagache Exp $
 
-$VERSION = "0.9.2"; # update after release
+$VERSION = "0.9.3"; # update after release
 
 # Perl modules.
 use CGI qw(:standard escape);
@@ -174,7 +174,10 @@ sub ChangeVars {
   }
 
   # Create URL short-cut to save typing for user.
-  if ($Pg_config->access('allow_quick_views')) {
+  if ($Pg_config->access('allow_quick_views') and
+	  exists($self->{'CardLogin'}) and
+	  defined($query->param('password'))
+	 ) {
 	$Transfer->{'URL_short_cut'} = join('',
 										$URL_script, $separator,
 										"action=view&",
@@ -335,7 +338,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.2
+0.9.3
 
 =head1 SEE ALSO
 

@@ -36,9 +36,9 @@ package Pgreet::Error;
 # handling.  It defines common conditions that are then handled
 # differently by the CGI application and the system daemon.
 ######################################################################
-# $Id: Error.pm,v 1.15 2003/09/26 20:52:43 elagache Exp $
+# $Id: Error.pm,v 1.16 2003/10/10 22:31:05 elagache Exp $
 
-$VERSION = "0.9.2"; # update after release
+$VERSION = "0.9.3"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -142,16 +142,25 @@ sub report_cgi {
   my $self = shift;
   my $level = shift;
   my @messages = @_;
-  my $error_no;
+  my $error_no = undef;
 
+  # Check if there is an error number for a template error message
   if ($messages[0] =~ /^\d+$/) {
 	$error_no = shift @messages;
+  }
+
+  # No matter what - output message to httpd log.
+  carp join('', @messages); # Use 'carp' to put out log message
+
+  # If there is an error number - output template
+  if (defined($error_no)) {
 	$self->error_template($error_no);
   }
+
+  # If this is designated as an error - terminate script
   if (_is_error($level)) {
-	croak join('', @messages);
-  } else {
-	carp join('', @messages);
+	# Don't use croak until after template has gone out.
+	croak "Fatal error - Script terminated";
   }
 }
 
@@ -462,7 +471,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.2
+0.9.3
 
 =head1 SEE ALSO
 
