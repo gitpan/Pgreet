@@ -38,9 +38,9 @@ package Pgreet::Config;
 # It provides for systematic updating of configuration information,
 # interrupt handling, and so on.
 ######################################################################
-# $Id: Config.pm,v 1.14 2003/08/20 23:27:15 elagache Exp $
+# $Id: Config.pm,v 1.17 2003/08/30 23:21:51 elagache Exp $
 
-$VERSION = "0.9.0"; # update after release
+$VERSION = "0.9.1"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -54,10 +54,8 @@ use CGI qw(:standard escape);
 use CGI::Carp;
 use Config::General;
 use User::pwent;
+use String::Checker;
 use Data::Dumper; # Needed only for debugging.
-
-# XXX For testing only!! XXX
-use lib "/home/users/elagache/Perl_projects/pgreet/lib";
 use Pgreet;
 
 # Perl Pragmas
@@ -82,6 +80,88 @@ our %set_primary_only =   (PID_file => 1,
 						   User_Pgreets => 1,
 						   flush_on_cycle => 1
 						  );
+
+# List of tests to be performed on Penguin Greetings configuration
+# parameters via the String::Checker interface
+our %check_configs =
+    (cgidir => ['is_directory'],
+	 imagedir => ['is_directory'],
+	 datadir => ['is_directory'],
+	 confdir => ['is_directory'],
+	 templatedir => ['is_directory'],
+	 tmpdir => ['is_directory'],
+	 scheduled_mail_queue => ['is_directory'],
+	 pgreet_uid => ['want_int', ['num_min' => 1], 'existing_uid'],
+	 pgreet_gid => ['want_int', ['num_min' => 1], 'existing_gid'],
+	 Timeout => ['want_int', ['num_min' => 1]],
+	 MaxRuns  => ['want_int', ['num_min' => 1]],
+	 SMTP_server =>
+	     {SMTP_Timeout => ['want_int', ['num_min' => 1]],
+		 },
+	 today_pause => ['want_int', ['num_min' => 1]],
+	 batch_pause => ['want_int', ['num_min' => 1]],
+	 batch_send_hour => ['want_int', ['num_min' => 1]],
+	 delete_state => ['want_int', ['num_min' => 1]],
+	 flush_on_cycle => ['want_int', ['num_min' => 1]],
+	 PID_path => ['is_directory'],
+	);
+
+
+############### Extensions to String::Checker #################
+
+String::Checker::register_check("is_directory",
+#
+# Test if this parameter is an existing local directory
+#
+        sub {
+		     my($s) = shift;
+			 if ((defined($$s)) && (not -d $$s)) {
+			   return 1;
+			 }
+			 return undef;
+		   }
+);
+
+String::Checker::register_check("num_min",
+#
+# Test if this parameter is greater than numerical lower bound
+#
+        sub {
+		     my($s) = shift;
+			 my($t) = shift;
+			 if ((defined($$s)) && (not ($t <= $$s))) {
+			   return 1;
+			 }
+			 return undef;
+		   }
+);
+
+String::Checker::register_check("existing_uid",
+#
+# Test if this parameter is an existing user ID number
+#
+        sub {
+		     my($s) = shift;
+			 if ((defined($$s)) && (not getpwuid($$s))) {
+			   return 1;
+			 }
+			 return undef;
+		   }
+);
+
+
+String::Checker::register_check("existing_gid",
+#
+# Test if this parameter is an existing group ID number
+#
+        sub {
+		     my($s) = shift;
+			 if ((defined($$s)) && (not getgrgid($$s))) {
+			   return 1;
+			 }
+			 return undef;
+		   }
+);
 
 
 ########################### METHODS ###########################
@@ -380,6 +460,63 @@ sub _swap_arrays_for_scalars {
   delete($config_piece->{'Force_to_array'});
 }
 
+sub chk_params {
+#
+# Convenience Method to start check pgreet
+# configuration parameters to see if they make
+# sense for the application.  Calls recursive
+# internal method _chk_params_helper to do the
+# real work.
+#
+  my $self = shift;
+
+  my $to_test = $self->{'config'};
+  my $test_results = {};
+
+  $self->_chk_params_helper($to_test, \%check_configs, $test_results);
+  return($test_results);
+
+}
+
+sub _chk_params_helper {
+#
+# Go through list of configuration parameters and
+# apply String::Checker tests as appropriate.  If
+# parameter has a nexted hash reference, process
+# the reference recursively as needed.
+#
+  my $self = shift;
+  my $to_test = shift;
+  my $chk_conf_ref = shift;
+  my $test_results = shift;
+
+  # Loop through every configuration parameter.
+  foreach my $param (keys(%{$to_test})) {
+	# Is this a reference to more parameters?
+	if ((ref($to_test->{$param}) eq 'HASH') and
+		(ref($chk_conf_ref->{$param}) eq 'HASH')
+		) {
+	      # If so recursively call subroutine to process hash references
+		  $self->_chk_params_helper($to_test->{$param},
+									$chk_conf_ref->{$param},
+									$test_results
+								   );
+		}
+	    # Are tests defined for this parameter?
+		elsif (exists($chk_conf_ref->{$param})) {
+		  # If so, perform tests
+		  my $result =
+			String::Checker::checkstring($to_test->{$param},
+										 $chk_conf_ref->{$param}
+										);
+		  # If any tests failed, add them to hash of param with failed tests.
+		  if(@{$result}) {
+			$test_results->{$param} = $result;
+		  }
+		}
+  }
+} # end sub _chk_params_helper
+
 
 =head1 NAME
 
@@ -406,6 +543,7 @@ Pgreet::Config - Configuration object for Penguin Greetings.
   $Pg_default_config->is_valid_site($site);
   $Pg_default_config->expand_config_file($site);
   $card_conf->scalar_to_array();
+  $results = $Pg_config->chk_params();
 
 =head1 DESCRIPTION
 
@@ -562,6 +700,28 @@ be called on card configuration information.
 
   $card_conf->scalar_to_array();
 
+=item chk_params()
+
+This method applies a set of tests to configuration variables for the
+Penguin Greetings main configuration files (not the card configuration
+files which are developer defined.)  The tests are a series of "sanity
+checks" that insure that the values allow Penguin Greetings to
+function at all and are implemented using C<String::Checker>.
+
+The method returns a hash reference.  If any errors are encountered
+the hash keys will be the configuration variables that had failed the
+tests and the hash value will be a list reference of C<String::Checker>
+expectations that failed.
+
+In order to provide meaningful tests, some additional expectations are
+defined: C<is_directory> - is this an existing directory on system?,
+C<num_min> - is this value less than supplied number?, C<existing_uid>
+is this an existing UID on this system?, and C<existing_gid> is this
+an existing GID on this system?  These names are turned in the array
+reference.  The Penguin Greetings utility C<PgreetConfTest> has a
+translation table of these expectations to provide "human-friendly"
+diagnostics for administrators.
+
 =item Internal methods
 
 There are four methods used internally by C<Pgreet::Config> that
@@ -572,6 +732,7 @@ of Penguin Greetings.  they are listed here for completeness:
   $self->_merge_configs($default_config_hash, $config_hash);
   $self->_int_scalar_to_array($new_hash);
   $self->_swap_arrays_for_scalars($config_piece);
+  $self->_chk_params_helper($to_test, \%check_configs, $test_results);
 
 =back
 
@@ -593,7 +754,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.0
+0.9.1
 
 =head1 SEE ALSO
 
