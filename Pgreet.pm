@@ -38,9 +38,9 @@ package Pgreet;
 # submodule category.
 #
 ######################################################################
-# $Id: Pgreet.pm,v 1.14 2004/01/12 20:04:41 elagache Exp $
+# $Id: Pgreet.pm,v 1.15 2004/01/26 23:22:39 elagache Exp $
 
-$VERSION = "0.9.5"; # update after release
+$VERSION = "0.9.6"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -343,7 +343,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.5
+0.9.6
 
 =head1 SEE ALSO
 

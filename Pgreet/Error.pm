@@ -36,9 +36,9 @@ package Pgreet::Error;
 # handling.  It defines common conditions that are then handled
 # differently by the CGI application and the system daemon.
 ######################################################################
-# $Id: Error.pm,v 1.17 2004/01/12 20:18:37 elagache Exp $
+# $Id: Error.pm,v 1.19 2004/02/07 23:01:54 elagache Exp $
 
-$VERSION = "0.9.5"; # update after release
+$VERSION = "0.9.6"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -271,23 +271,29 @@ sub error_template {
   my $file = $Pg_config->access('default_error');
   my $templatedir = $Pg_config->access('templatedir');
   my $tpl = $Pg_config->access('template_suffix');
+  my $Embperl_Object = $Pg_config->access('Embperl_Object');
   my $Transfer;
   my $Pg_cgi;
 
-  # If CGIUtils object defined, used that for variables.
+  # If CGIUtils object defined, used that for variables & Embperl execution
   if (exists($self->{'Pg_cgi'})) {
 	$Pg_cgi = $self->{'Pg_cgi'};
 	$Pg_cgi->set_value('error_no', $error_no);
 	$Transfer = $Pg_cgi->ChangeVars();
+	print "Content-type: text/html\n\n";
+	print $Pg_cgi->Embperl_Execute($templatedir, "$file.$tpl",
+								   $Transfer, $Embperl_Object);
+
   } else { # Else use "cheater" local stub routine.
 	$Transfer = $self->_LocalChangeVars($error_no);
+	print "Content-type: text/html\n\n";
+	Embperl::Execute ({inputfile  => "$templatedir/$file.$tpl",
+					   param  => [$Transfer],
+					  }
+					 );
   }
 
-  print "Content-type: text/html\n\n";
-  Embperl::Execute ({inputfile  => "$templatedir/$file.$tpl",
-					 param  => [$Transfer],
-					}
-				   );
+
 } # End sub error_template
 
 
@@ -471,7 +477,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.5
+0.9.6
 
 =head1 SEE ALSO
 

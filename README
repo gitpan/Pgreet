@@ -4,12 +4,15 @@ NAME
 
 
 DESCRIPTION
+
     The Perl modules: "Pgreet" (Pgreet.pm,) "Pgreet::Config"
-    (Pgreet/Config.pm,) and "Pgreet::Error" (Pgreet/Error.pm) provide
-    shared functionality for the application of the Penguin Greetings
-    ecard application.  They are not intended to be used by other
-    applications in general.  You can learn more about Penguin
-    Greetings (pgreet) at its SourceForge site:
+    (Pgreet/Config.pm,) "Pgreet::Error" (Pgreet/Error.pm,)
+    Pgreet::CGIUtils (Pgreet/CGIUtils.pm) and Pgreet:DaemonUtils
+    (Pgreet/DaemonUtils.pm) provide shared functionality for the
+    application of the Penguin Greetings ecard application.  They are
+    not intended to be used by other applications in general.  You can
+    learn more about Penguin Greetings (pgreet) at its SourceForge
+    site:
 
 		http://pgreet.sourceforce.net/
 
@@ -44,4 +47,4 @@ AUTHOR
     Edouard Lagache <pgreetdev@canebas.org>
 
 VERSION
-    0.9.5
+    0.9.6

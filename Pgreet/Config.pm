@@ -38,9 +38,9 @@ package Pgreet::Config;
 # It provides for systematic updating of configuration information,
 # interrupt handling, and so on.
 ######################################################################
-# $Id: Config.pm,v 1.25 2004/01/13 19:49:10 elagache Exp $
+# $Id: Config.pm,v 1.29 2004/02/17 23:41:03 elagache Exp $
 
-$VERSION = "0.9.5"; # update after release
+$VERSION = "0.9.6"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -79,7 +79,10 @@ our %set_primary_only =   (PID_file => 1,
 						   SMTP_server => 1,
 						   user_access => 1,
 						   User_Pgreets => 1,
-						   flush_on_cycle => 1
+						   flush_pause => 1,
+						   purge_pause => 1,
+						   purge_db_hour => 1,
+						   reload_config => 1,
 						  );
 
 # List of tests to be performed on Penguin Greetings configuration
@@ -101,9 +104,12 @@ our %check_configs =
 		 },
 	 today_pause => ['want_int', ['num_min' => 1]],
 	 batch_pause => ['want_int', ['num_min' => 1]],
-	 batch_send_hour => ['want_int', ['num_min' => 1]],
+	 batch_send_hour => ['want_int', ['num_min' => 0]],
 	 delete_state => ['want_int', ['num_min' => 1]],
-	 flush_on_cycle => ['want_int', ['num_min' => 1]],
+	 flush_pause => ['want_int', ['num_min' => 1]],
+	 purge_pause => ['want_int', ['num_min' => 1]],
+	 purge_db_hour => ['want_int', ['num_min' => 0]],
+	 reload_config => ['want_int', ['num_min' => 1]],
 	 PID_path => ['is_directory'],
 	);
 
@@ -177,39 +183,56 @@ sub new {
   my $config_file = shift;
   my $Pg_error = shift;
   my $default_config = shift;
+  my $no_merge = shift;
+
   my $self = {};
+  bless $self, $class;
   my $default_config_hash = {};
   my $config_hash = {};
+  my $cache_conf;
 
-  bless $self, $class;
+  # Have we cached this secondary ecard site already? - if so just return it.
+  if ($default_config and
+	  ($cache_conf = $default_config->fetch_cache_site($config_file))
+	 ) {
+	return($cache_conf);
 
-  # If we have an existing Error object, bind that to object.
-  if (defined($Pg_error)) {
-	$self->{'Pg_error'} = $Pg_error;
-  }
-
-  # Set value of configuration file.
-  $self->{'config_file'} = $config_file;
-
-  $config_hash = $self->_read_config_file($config_file);
-
-  # Do we have a default configuration to merge into this object?
-  if(defined($default_config)) {
-	$self->{'default_config'} = $default_config;
-	$default_config_hash = $default_config->get_hash();
-	$config_hash = $self->_merge_configs($default_config_hash, $config_hash);
-	$self->{'config'} = $config_hash;
-	return($self);
-  }
-  # Else if we have a configuration hash, set that and return object ref.
-  elsif ($config_hash) {
-	$self->{'config'} = $config_hash;
-	return($self);
-  # If opening default configuration fails - returns 0 (false).
+  # Otherwise we need to construct new object and read data from a file.
   } else {
-	return(0);
+	# If we have an existing Error object, bind that to object.
+	if (defined($Pg_error)) {
+	  $self->{'Pg_error'} = $Pg_error;
+	}
+
+	# Set value of configuration file and read data
+	$self->{'config_file'} = $config_file;
+	$config_hash = $self->_read_config_file($config_file);
+
+	# Do we have a default configuration to merge into this object?
+	if(defined($default_config)) {
+	  # If needed, merge settings from secondary ecard site with primary
+	  $self->{'default_config'} = $default_config;
+	  unless ($no_merge) {
+		$default_config_hash = $default_config->get_hash();
+		$config_hash =
+		  $self->_merge_configs($default_config_hash, $config_hash);
+	  }
+	  $self->{'config'} = $config_hash;
+	  # Cache resulting configuration
+	  $default_config->cache_site($config_file, $self);
+	  return($self);
+	}
+	# Else if we have a configuration hash, set that and return object ref.
+	elsif ($config_hash) {
+	  $self->{'config'} = $config_hash;
+	  $self->{'secondary_cache'} = {};
+	  return($self);
+	  # If opening default configuration fails - returns 0 (false).
+	} else {
+	  return(0);
+	}
   }
-}
+} # End object constructor.
 
 sub add_error_obj {
 #
@@ -322,6 +345,7 @@ sub choose_localized_site {
   my $site_name = shift;
   my $localize = $self->access('Localize');
   my $Pg_error = $self->{'Pg_error'};
+  my $language;
   # XXX strict setting should become a configuration option.
   my $acceptor = I18N::AcceptLanguage->new(strict => 0);
 
@@ -330,24 +354,24 @@ sub choose_localized_site {
 	# If there is localization information try to match to user language
 	my $site_options = $localize->{$site_name};
 	my @keys = keys(%{$site_options});
-	my $language = $acceptor->accepts($ENV{HTTP_ACCEPT_LANGUAGE}, \@keys);
+	$language = $acceptor->accepts($ENV{HTTP_ACCEPT_LANGUAGE}, \@keys);
 
 	# If we have a match return that.
 	if ($language) {
-	  return($site_options->{$language});
+	  return($site_options->{$language}, $language);
 	}
 	# Else if we have a default - return that
 	elsif ($site_options->{'default'}) {
-	  return($site_options->{'default'});
+	  return($site_options->{'default'}, $language);
 	# Otherwise issue warning and return site name - gotta return something.
 	} else {
 	  $Pg_error->report('warn',
 						"Localized site \'$site_name\' lacks a default value"
 					   );
-	  return($site_name);
+	  return($site_name, $language);
 	}
   } else {
-	return($site_name); # No localization lookup, assume site isn't localized
+	return($site_name, $language); # No localization lookup, not localized(??)
   }
 } # End sub choose_localized_site
 
@@ -559,6 +583,32 @@ sub _chk_params_helper {
 		}
   }
 } # end sub _chk_params_helper
+
+sub cache_site {
+#
+# Method to cache the read of a secondary ecard site
+# on the primary object to avoid unnecessary disk
+# reloading.
+#
+  my $self = shift;
+  my $config_file = shift;
+  my $secondary_obj = shift;
+
+  return($self->{'secondary_cache'}->{$config_file} = $secondary_obj);
+
+}
+
+sub fetch_cache_site {
+#
+# Method to return value of a previously cached
+# secondary ecard site configuration object.
+#
+  my $self = shift;
+  my $config_file = shift;
+
+  return($self->{'secondary_cache'}->{$config_file});
+
+}
 
 
 =head1 NAME
@@ -817,7 +867,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.5
+0.9.6
 
 =head1 SEE ALSO
 

@@ -37,13 +37,15 @@ package Pgreet::CGIUtils;
 # In particular it houses the routines that create the transfer
 # hash reference for Embperl.
 ######################################################################
-# $Id: CGIUtils.pm,v 1.9 2004/01/12 20:18:37 elagache Exp $
+# $Id: CGIUtils.pm,v 1.18 2004/02/21 18:20:39 elagache Exp $
 
-$VERSION = "0.9.5"; # update after release
+$VERSION = "0.9.6"; # update after release
 
 # Perl modules.
 use CGI qw(:standard escape);
 use CGI::Carp;
+use Embperl;
+use Embperl::Object;
 
 # Perl Pragmas
 use strict;
@@ -56,6 +58,7 @@ sub new {
   my $Pg_config = shift;
   my $cgi_script = shift;
   my $query = shift;
+  my $VERSION = shift;
   my $SpeedyCGI = shift;
   my $Invocations = shift;
   my $StartTime = shift;
@@ -66,6 +69,7 @@ sub new {
   $self->{'Pg_config'} = $Pg_config;
   $self->{'cgi_script'} = $cgi_script;
   $self->{'query'} = $query;
+  $self->{'VERSION'} = $VERSION;
   $self->{'SpeedyCGI'} = $SpeedyCGI;
   $self->{'Invocations'} = $Invocations;
   $self->{'StartTime'} = $StartTime;
@@ -108,7 +112,7 @@ sub ChangeVars {
 #
   my $self = shift;
   my $Transfer = {};
-  my $URL_script;
+  my $URL_site;
   my $separator;
 
   # Retrieve values from object
@@ -149,6 +153,7 @@ sub ChangeVars {
   $Transfer->{'number'} = $self->{'CardLogin'};
   $Transfer->{'error_hash'} = $self->{'error_hash'};
   $Transfer->{'error_no'} = $self->{'error_no'};
+  $Transfer->{'VERSION'} = $self->{'VERSION'};
   # SpeedyCGI values
   $Transfer->{'SpeedyCGI'} = $SpeedyCGI;
   $Transfer->{'StartTime'} = $StartTime;
@@ -159,19 +164,22 @@ sub ChangeVars {
 
   # Create URL to access card (for secondary ecard sites.)
   if ($query->param('site')) {
-	$URL_script = join('',
+	$URL_site = join('',
 					   $Pg_config->access('cgiurl'),
 					   "/$cgi_script",
 					   "?site=",$query->param('site')
 					  );
 	$separator = "&";
   } else {
-	$URL_script = join('',
+	$URL_site = join('',
 					   $Pg_config->access('cgiurl'),
 					   "/$cgi_script",
 					  );
 	$separator = "?";
   }
+
+  # In any case - provide developers with URL to site (primary or secondary.)
+  $Transfer->{'URL_site'} = $URL_site;
 
   # Create URL short-cut to save typing for user.
   if ($Pg_config->access('allow_quick_views') and
@@ -179,7 +187,7 @@ sub ChangeVars {
 	  defined($query->param('password'))
 	 ) {
 	$Transfer->{'URL_short_cut'} = join('',
-										$URL_script, $separator,
+										$URL_site, $separator,
 										"action=view&",
 										"next_template=view&",
 										"code=", $self->{'CardLogin'},
@@ -187,11 +195,83 @@ sub ChangeVars {
 										escape($query->param('password'))
 									   );
   } else {
-	$Transfer->{'URL_short_cut'} = $URL_script;
+	$Transfer->{'URL_short_cut'} = $URL_site;
   }
 
   # Return hash reference
   return($Transfer);
+}
+
+sub Embperl_Execute {
+#
+# Subroutine to call the Embperl execute function (either direct
+# object-oriented version) in a consistent fashion from either
+# the CGI application of command-line test programs.
+#
+  my $self = shift;
+  my $templatedir = shift;
+  my $Embperl_file = shift;
+  my $Transfer = shift;
+  my $Embperl_Object = shift;
+  my @except_templates;
+  my $result_str;
+
+  # If this is an object-oriented call, check if template isn't excluded
+  if ($Embperl_Object and exists($Embperl_Object->{'bypass_object'})) {
+
+	# Get a list (even of one item) of excluded files.
+	if (ref($Embperl_Object->{'bypass_object'}) eq 'ARRAY') {
+	  @except_templates = @{$Embperl_Object->{'bypass_object'}};
+	} else {
+	  @except_templates = ( $Embperl_Object->{'bypass_object'} );
+	}
+    my @except_templates = $Embperl_Object->{'bypass_object'};
+
+	foreach my $file (@except_templates) {
+	  # If this is an excluded file - forced standard processing.
+	  if ($file eq $Embperl_file) {
+		$Embperl_Object = 0; # If excluded file - don't use Embperl::Object
+		last;
+	  }
+	}
+  }
+
+  # If this is still an Embperl::Object call provide all parameters for call
+  if ($Embperl_Object) {
+	$Embperl_Object->{'inputfile'} = "$templatedir/$Embperl_file";
+	$Embperl_Object->{'output'} = \$result_str;
+	$Embperl_Object->{'param'} = [$Transfer];
+
+	# If an object addpath convert from UNIX to Perl arrayref.
+	if (exists($Embperl_Object->{'object_addpath'})) {
+	  my @path_array = split(':', $Embperl_Object->{'object_addpath'});
+	  $Embperl_Object->{'object_addpath'} = \@path_array;
+	# If user doesn't provide an object_addpath - assume template path
+	} else {
+	  my $Pg_config = $self->{'Pg_config'};
+	  $Embperl_Object->{'object_addpath'} =
+		[ $Pg_config->access('templatedir') ];
+
+	}
+
+	# Provide a dummy application if none is provided.
+	unless (exists($Embperl_Object->{'appname'})) {
+	  $Embperl_Object->{'appname'} = "Default App";
+	}
+
+	# Running Object-Oriented version of Embperl
+	Embperl::Object::Execute ($Embperl_Object);
+
+  # Use Embperl to process HTML and send to standard out.
+  } else {
+	Embperl::Execute ({inputfile  => "$templatedir/$Embperl_file",
+					   output => \$result_str,
+					   param  => [$Transfer],
+					  }
+					 );
+  }
+
+  return($result_str);
 }
 
 =head1 NAME
@@ -338,7 +418,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.5
+0.9.6
 
 =head1 SEE ALSO
 

@@ -23,7 +23,7 @@
 #     http://sourceforge.net/projects/pgreet/
 #
 ######################################################################
-# $Id: Pgreet.t,v 1.4 2004/01/13 21:09:32 elagache Exp $
+# $Id: Pgreet.t,v 1.7 2004/03/04 00:45:52 elagache Exp $
 #
 use Test::More tests => 16;
 use File::Temp qw(tempdir);
@@ -33,7 +33,7 @@ use File::Basename;
 
 # Global declarations
 our ($TmpDir, $ErrorMessage, $config_file, $state_file);
-our ($Pg_config, $Pg_error, $Pg_obj);
+our ($template_file, $Pg_config, $Pg_error, $Pg_obj);
 
 our $Test_state_hash = { varstring => "PgTemplateTest=true",
 						 hiddenfields =>  "<!-- Templatetest hiddenfields -->",
@@ -82,6 +82,34 @@ EOF
 	close(CONFIG);
 }
 
+sub create_Embperl_file {
+#
+# A Perl "here" document containing a bare-bones
+# Embperl file to be evaluated for testing.
+#
+  $template_file = "Embperl_template.epl.html";
+
+  unless (open(EMBPERL, ">$TmpDir/$template_file")) {
+	$ErrorMessage = "Unable to create temporary configuration file";
+	return(0);
+  }
+
+  print EMBPERL << "EOF";
+  [\$ var \$test \$]
+  [- \$test = "A test title" -]
+  <html>
+  <head>
+  <title>[+ \$test +]</title>
+  </head>
+  <body>
+  <h1>[+ \$test +]</h1>
+  </body>
+  <html>
+EOF
+
+	close(EMBPERL);
+}
+
 # Need modules to run this puppy
 BEGIN { use_ok( 'Pgreet' ); }
 BEGIN { use_ok( 'Pgreet::Config' ); }
@@ -89,7 +117,7 @@ BEGIN { use_ok( 'Pgreet::Error' ); }
 BEGIN { use_ok( 'Pgreet::CGIUtils'); }
 
 # Create a temporary environment to run tests in
-ok(make_tmp_dir() and create_config_file(),
+ok(make_tmp_dir() and create_config_file() and create_Embperl_file(),
    "Create temporary Penguin Greetings environment") or
   diag($ErrorMessage);
 
@@ -131,4 +159,13 @@ ok(make_tmp_dir() and create_config_file(),
   is_deeply($Test_state_hash, $data_hash,
 			"Compare state file data to original");
 
+  # Testing Embperl execution (#17)
+#  my $Embperl_output;
+#  my $Trans = {};
+#  ok($Embperl_output = 
+#             $Pg_cgi->Embperl_Execute($TmpDir, $template_file, $Trans),
+#     "Executing Embperl");
+  # Making sure Embperl intepolated variables (#18)
+#  ok($Embperl_output !~ /\[/,
+#     "Confirming conversion of Embperl code into HTML");
 }
