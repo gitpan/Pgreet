@@ -8,7 +8,7 @@ package Pgreet::Error;
 # A Perl CGI-based web card application for LINUX and probably any
 # other UNIX system supporting standard Perl extensions.
 #
-#     Edouard Lagache, elagache@canebas.org, Copyright (C)  2003
+#  Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
 #
 # Penguin Greetings (pgreet) consists of a Perl CGI script that
 # handles interactions with users wishing to create and/or
@@ -36,9 +36,9 @@ package Pgreet::Error;
 # handling.  It defines common conditions that are then handled
 # differently by the CGI application and the system daemon.
 ######################################################################
-# $Id: Error.pm,v 1.16 2003/10/10 22:31:05 elagache Exp $
+# $Id: Error.pm,v 1.17 2004/01/12 20:18:37 elagache Exp $
 
-$VERSION = "0.9.3"; # update after release
+$VERSION = "0.9.5"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -455,7 +455,7 @@ files are "reasonable."
 
 =head1 COPYRIGHT
 
-Copyright (c) 2003 Edouard Lagache
+Copyright (c) 2003, 2004 Edouard Lagache
 
 This software is released under the GNU General Public License, Version 2.
 For more information, see the COPYING file included with this software or
@@ -471,7 +471,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.3
+0.9.5
 
 =head1 SEE ALSO
 

@@ -5,7 +5,7 @@
 
 # Definitions
 $DISTNAME = 'Pgreet';
-$VERSION  = "0.9.3";
+$VERSION  = "0.9.5";
 
 # Prerequisites
 BEGIN { require 5.8.0 }
@@ -21,7 +21,9 @@ WriteMakefile( # Prerequisites same as for Install.PL
 							'String::Checker' => '0.03',
 							'Digest::MD5' => '2.17',
 							'Log::Dispatch' => '2.06',
-							'Embperl' => '2.0'
+							'Embperl' => '2.0',
+							'I18N::AcceptLanguage' => '1.00'
+
 						   },
 			  VERSION   => $VERSION,
 			  NAME      => $DISTNAME,	

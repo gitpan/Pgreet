@@ -7,7 +7,7 @@
 # Testing script for modules: Pgreet, Pgreet::Config, and
 #                             Pgreet::Error
 #
-#     Edouard Lagache, elagache@canebas.org, Copyright (C)  2003
+#  Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
 #
 # ** This program has been released under GNU GENERAL PUBLIC
 # ** LICENSE.  For information, see the COPYING file included
@@ -23,7 +23,7 @@
 #     http://sourceforge.net/projects/pgreet/
 #
 ######################################################################
-# $Id: Pgreet.t,v 1.3 2003/09/19 22:32:46 elagache Exp $
+# $Id: Pgreet.t,v 1.4 2004/01/13 21:09:32 elagache Exp $
 #
 use Test::More tests => 16;
 use File::Temp qw(tempdir);

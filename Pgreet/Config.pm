@@ -8,7 +8,7 @@ package Pgreet::Config;
 # A Perl CGI-based web card application for LINUX and probably any
 # other UNIX system supporting standard Perl extensions.
 #
-#     Edouard Lagache, elagache@canebas.org, Copyright (C)  2003
+#   Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
 #
 # Penguin Greetings (pgreet) consists of a Perl CGI script that
 # handles interactions with users wishing to create and/or
@@ -38,9 +38,9 @@ package Pgreet::Config;
 # It provides for systematic updating of configuration information,
 # interrupt handling, and so on.
 ######################################################################
-# $Id: Config.pm,v 1.22 2003/10/13 16:59:14 elagache Exp $
+# $Id: Config.pm,v 1.25 2004/01/13 19:49:10 elagache Exp $
 
-$VERSION = "0.9.3"; # update after release
+$VERSION = "0.9.5"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -56,6 +56,7 @@ use Config::General;
 use User::pwent;
 use String::Checker;
 use Data::Dumper; # Needed only for debugging.
+use I18N::AcceptLanguage;
 use Pgreet;
 
 # Perl Pragmas
@@ -308,6 +309,47 @@ sub put_hash {
 
   return($self->{'config'} = $config_hash);
 }
+
+sub choose_localized_site {
+#
+# Subroutine to see if the site selected is actually
+# one of a number of localized sites and if so, to
+# choose which of those sites is the one appropriate
+# given the user's language settings.
+#
+
+  my $self = shift;
+  my $site_name = shift;
+  my $localize = $self->access('Localize');
+  my $Pg_error = $self->{'Pg_error'};
+  # XXX strict setting should become a configuration option.
+  my $acceptor = I18N::AcceptLanguage->new(strict => 0);
+
+  # If there are any localization settings for this site
+  if (exists($localize->{$site_name})) {
+	# If there is localization information try to match to user language
+	my $site_options = $localize->{$site_name};
+	my @keys = keys(%{$site_options});
+	my $language = $acceptor->accepts($ENV{HTTP_ACCEPT_LANGUAGE}, \@keys);
+
+	# If we have a match return that.
+	if ($language) {
+	  return($site_options->{$language});
+	}
+	# Else if we have a default - return that
+	elsif ($site_options->{'default'}) {
+	  return($site_options->{'default'});
+	# Otherwise issue warning and return site name - gotta return something.
+	} else {
+	  $Pg_error->report('warn',
+						"Localized site \'$site_name\' lacks a default value"
+					   );
+	  return($site_name);
+	}
+  } else {
+	return($site_name); # No localization lookup, assume site isn't localized
+  }
+} # End sub choose_localized_site
 
 sub is_valid_site {
 #
@@ -725,6 +767,24 @@ reference.  The Penguin Greetings utility C<PgreetConfTest> has a
 translation table of these expectations to provide "human-friendly"
 diagnostics for administrators.
 
+=item choose_localized_site()
+
+This method takes a site name that is expected to be the prefix for a
+number of sites localized in different languages.  It then uses the
+CPAN module: C<I18N::AcceptLanguage> to match among the options
+provided in the C<Localize> configuration parameters which available
+sites among those sites with multiple language support best fits the
+user's language profile as represented by their
+C<HTTP_ACCEPT_LANGUAGE> environmental string.  If no acceptable match
+is found, it returns the default site is specified.  If no default is
+provided, it will create a warning and return the argument supplied.
+If there is no C<Localize> lookup for the site name it is just
+returned assuming that this is a non-localized site.
+
+=back
+
+=over
+
 =item Internal methods
 
 There are four methods used internally by C<Pgreet::Config> that
@@ -741,7 +801,7 @@ of Penguin Greetings.  they are listed here for completeness:
 
 =head1 COPYRIGHT
 
-Copyright (c) 2003 Edouard Lagache
+Copyright (c) 2003, 2004 Edouard Lagache
 
 This software is released under the GNU General Public License, Version 2.
 For more information, see the COPYING file included with this software or
@@ -757,7 +817,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.3
+0.9.5
 
 =head1 SEE ALSO
 
