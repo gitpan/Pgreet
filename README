@@ -1,0 +1,47 @@
+NAME
+    Pgreet - Perl modules to support the ecard application:
+			 Penguin Greetings.
+
+
+DESCRIPTION
+    The Perl modules: "Pgreet" (Pgreet.pm,) "Pgreet::Config"
+    (Pgreet/Config.pm,) and "Pgreet::Error" (Pgreet/Error.pm) provide
+    shared functionality for the application of the Penguin Greetings
+    ecard application.  They are not intended to be used by other
+    applications in general.  You can learn more about Penguin
+    Greetings (pgreet) at its SourceForge site:
+
+		http://pgreet.sourceforce.net/
+
+	POD module documentation is provided for those who might wish
+	either to work on Penguin Greetings or adapt these modules to some
+	other purpose.
+
+INSTALLATION
+	Installing these modules to support Penguin Greetings follows
+	standard Perl conventions.  One can install the library by running
+	the following commands:
+
+	   perl Makefile.PL
+	   make
+	   make install
+
+	The "make install" command must be run as superuser (root.)  There
+	are no tests defined for these modules, although running a "make
+	test" does no harm either.
+
+COPYRIGHT
+    Copyright (c) 2003 Edouard Lagache
+
+    This software is released under the GNU General Public License, Version
+    2. For more information, see the COPYING file included with this
+    software or visit: http://www.gnu.org/copyleft/gpl.html
+
+BUGS
+    No known bugs at this time.
+
+AUTHOR
+    Edouard Lagache <pgreetdev@canebas.org>
+
+VERSION
+    0.8.9
