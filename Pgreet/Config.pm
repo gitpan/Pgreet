@@ -38,9 +38,9 @@ package Pgreet::Config;
 # It provides for systematic updating of configuration information,
 # interrupt handling, and so on.
 ######################################################################
-# $Id: Config.pm,v 1.29 2004/02/17 23:41:03 elagache Exp $
+# $Id: Config.pm,v 1.30 2004/03/05 01:08:55 elagache Exp $
 
-$VERSION = "0.9.6"; # update after release
+$VERSION = "0.9.7"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -867,7 +867,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.6
+0.9.7
 
 =head1 SEE ALSO
 

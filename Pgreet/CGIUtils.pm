@@ -37,9 +37,9 @@ package Pgreet::CGIUtils;
 # In particular it houses the routines that create the transfer
 # hash reference for Embperl.
 ######################################################################
-# $Id: CGIUtils.pm,v 1.18 2004/02/21 18:20:39 elagache Exp $
+# $Id: CGIUtils.pm,v 1.19 2004/03/05 01:08:55 elagache Exp $
 
-$VERSION = "0.9.6"; # update after release
+$VERSION = "0.9.7"; # update after release
 
 # Perl modules.
 use CGI qw(:standard escape);
@@ -418,7 +418,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.6
+0.9.7
 
 =head1 SEE ALSO
 

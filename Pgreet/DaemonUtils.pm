@@ -36,14 +36,15 @@ package Pgreet::DaemonUtils;
 # specific routines between the application daemon and command line
 # utilities that have similar functionality.
 ######################################################################
-# $Id: DaemonUtils.pm,v 1.3 2004/02/27 00:55:39 elagache Exp $
+# $Id: DaemonUtils.pm,v 1.9 2004/03/05 19:31:53 elagache Exp $
 
-$VERSION = "0.9.6"; # update after release
+$VERSION = "0.9.7"; # update after release
 
 # Perl modules.
 use DB_File;
 # use Data::Dumper; # Needed only for debugging.
 use File::Copy;
+use File::Spec;
 use File::Temp qw(tempdir);
 
 # Simplify output of Data::Dumper
@@ -288,7 +289,9 @@ sub backup_db_purge_old {
 						);
 
   # Try to create a directory to create test values in.
-  unless (($TmpDir = tempdir("PgreetDBpurgeDirXXXX", CLEANUP => 1)) and
+  unless (($TmpDir = tempdir("PgreetDBpurge-XXXXXX", CLEANUP => 1,
+							 TMPDIR => 1))
+		  and
 		  (-d $TmpDir)
 		  ){
 	$Pg_error->report('error',
@@ -490,7 +493,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.6
+0.9.7
 
 =head1 SEE ALSO
 
