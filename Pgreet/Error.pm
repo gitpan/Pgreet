@@ -8,7 +8,7 @@ package Pgreet::Error;
 # A Perl CGI-based web card application for LINUX and probably any
 # other UNIX system supporting standard Perl extensions.
 #
-#  Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
+#  Edouard Lagache, elagache@canebas.org, Copyright (C)  2003-2005
 #
 # Penguin Greetings (pgreet) consists of a Perl CGI script that
 # handles interactions with users wishing to create and/or
@@ -36,9 +36,9 @@ package Pgreet::Error;
 # handling.  It defines common conditions that are then handled
 # differently by the CGI application and the system daemon.
 ######################################################################
-# $Id: Error.pm,v 1.22 2004/03/29 21:25:23 elagache Exp $
+# $Id: Error.pm,v 1.25 2005/04/16 22:16:49 elagache Exp $
 
-$VERSION = "0.9.8"; # update after release
+$VERSION = "0.9.9"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -272,6 +272,7 @@ sub error_template {
   my $templatedir = $Pg_config->access('templatedir');
   my $tpl = $Pg_config->access('template_suffix');
   my $Embperl_Object = $Pg_config->access('Embperl_Object');
+  my $Mason_Object = $Pg_config->access('Mason_Object');
   my $Transfer;
   my $Pg_cgi;
 
@@ -280,10 +281,16 @@ sub error_template {
 	$Pg_cgi = $self->{'Pg_cgi'};
 	$Pg_cgi->set_value('error_no', $error_no);
 	$Transfer = $Pg_cgi->ChangeVars();
-	print "Content-type: text/html\n\n";
-	print $Pg_cgi->Embperl_Execute($templatedir, "$file.$tpl",
-								   $Transfer, $Embperl_Object);
 
+	print "Content-type: text/html\n\n";
+	# Use specified Embedded Perl interpreter.
+    if ( $Mason_Object ) {
+	  print $Pg_cgi->Mason_Execute($templatedir, "$file.$tpl",
+								   $Transfer, $Mason_Object);
+	} else {
+	  print $Pg_cgi->Embperl_Execute($templatedir, "$file.$tpl",
+									 $Transfer, $Embperl_Object);
+	}
   } else { # Else use "cheater" local stub routine.
 	$Transfer = $self->_LocalChangeVars($error_no);
 	print "Content-type: text/html\n\n";
@@ -388,7 +395,7 @@ Unfortunately, the rich variation in possible error levels for syslog
 are nor mirrored elsewhere.  C<Pgreet::Error> maps the error levels:
 'error', 'critical', 'alert', and 'emergency' to a "die" scenario and
 will cause the application to halt in an appropriate way.  All other
-levels are considered a 'warn' scenario, reported, but the program is
+levels are considered a 'warning' scenario, reported, but the program is
 allowed to continue.
 
 There is an additional variation for CGI applications.  CGI
@@ -461,7 +468,7 @@ files are "reasonable."
 
 =head1 COPYRIGHT
 
-Copyright (c) 2003, 2004 Edouard Lagache
+Copyright (c) 2003-2005 Edouard Lagache
 
 This software is released under the GNU General Public License, Version 2.
 For more information, see the COPYING file included with this software or
@@ -477,7 +484,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.8
+0.9.9
 
 =head1 SEE ALSO
 

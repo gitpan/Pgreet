@@ -8,7 +8,7 @@ package Pgreet;
 # A Perl CGI-based web card application for LINUX and probably any
 # other UNIX system supporting standard Perl extensions.
 #
-#  Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
+#  Edouard Lagache, elagache@canebas.org, Copyright (C)  2003-2005
 #
 # Penguin Greetings (pgreet) consists of a Perl CGI script that
 # handles interactions with users wishing to create and/or
@@ -38,9 +38,9 @@ package Pgreet;
 # submodule category.
 #
 ######################################################################
-# $Id: Pgreet.pm,v 1.17 2004/03/29 21:25:23 elagache Exp $
+# $Id: Pgreet.pm,v 1.20 2005/04/16 22:16:40 elagache Exp $
 
-$VERSION = "0.9.8"; # update after release
+$VERSION = "0.9.9"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -158,7 +158,7 @@ sub read_state {
 
   # traditional close protection.
   unless ($StateHdl->close()) {
-	  $Pg_error->report('warn', "Unable to close file: $StateFilName");
+	  $Pg_error->report('warning', "Unable to close file: $StateFilName");
   }
   return($data_hash);
 } #End sub read_state
@@ -213,7 +213,7 @@ sub store_state {
 
   # Close file.
   unless ($StateHdl->close()) {
-	$Pg_error->report('warn',
+	$Pg_error->report('warning',
 					  "unable to close temporary state file: $StateFilName"
 					 );
   }
@@ -327,7 +327,7 @@ The message text continues until the end of the file.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2003, 2004 Edouard Lagache
+Copyright (c) 2003-2005 Edouard Lagache
 
 This software is released under the GNU General Public License, Version 2.
 For more information, see the COPYING file included with this software or
@@ -343,7 +343,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.8
+0.9.9
 
 =head1 SEE ALSO
 

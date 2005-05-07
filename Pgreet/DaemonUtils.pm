@@ -8,7 +8,7 @@ package Pgreet::DaemonUtils;
 # A Perl CGI-based web card application for LINUX and probably any
 # other UNIX system supporting standard Perl extensions.
 #
-#   Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
+#   Edouard Lagache, elagache@canebas.org, Copyright (C)  2004-2005
 #
 # Penguin Greetings (pgreet) consists of a Perl CGI script that
 # handles interactions with users wishing to create and/or
@@ -36,9 +36,9 @@ package Pgreet::DaemonUtils;
 # specific routines between the application daemon and command line
 # utilities that have similar functionality.
 ######################################################################
-# $Id: DaemonUtils.pm,v 1.10 2004/03/29 21:25:23 elagache Exp $
+# $Id: DaemonUtils.pm,v 1.14 2005/04/16 22:16:49 elagache Exp $
 
-$VERSION = "0.9.8"; # update after release
+$VERSION = "0.9.9"; # update after release
 
 # Perl modules.
 use DB_File;
@@ -97,9 +97,9 @@ sub backup_db_files {
   # Loop through filenames backing up each one.
   foreach my $file (@filenames) {
 	unless (copy($file, "$file.bak")) {
-	  Pg_error->report('error',
-					   "Unable to make backup copy of file: $file"
-					  );
+	  $Pg_error->report('warn',
+						"Unable to make backup copy of file: $file"
+					   );
 	}
   }
 } # End backup_db_files
@@ -121,7 +121,7 @@ sub copy_db_files {
 	my $src_file = join('/', $src_path, $file);
 	my $dst_file = join('/', $dst_path, $file);
 	unless (copy($src_file, $dst_file)) {
-	  Pg_error->report('error',
+	  Pg_error->report('warn',
 					   "Unable to copy $src_file to $dst_file"
 					  );
 	}
@@ -477,7 +477,7 @@ application daemon and command line utilties.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 Edouard Lagache
+Copyright (c) 2004-2005  Edouard Lagache
 
 This software is released under the GNU General Public License, Version 2.
 For more information, see the COPYING file included with this software or
@@ -493,7 +493,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.8
+0.9.9
 
 =head1 SEE ALSO
 

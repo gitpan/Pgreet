@@ -1,15 +1,49 @@
 #
-# Quickie Makefile.PL for Penguin Greetings modules
-# E. Lagache, 7/2003
+# Makefile.PL for Penguin Greetings modules
+# E. Lagache, 4/2005
 #
+
+sub optional_modules {
+#
+# Subroutine to print out consistent warnings for modules that are used
+# in some of the Penguin Greetings secondary ecard sites but
+# aren't needed for an initial installation.
+#
+  my $module_list_ref = shift;
+  my @missing_modules = ();
+
+  foreach my $module (@{$module_list_ref}) {
+	eval "require $module";
+
+	if ($@) {
+	  push @missing_modules, $module;
+	}
+  }
+
+  if (@missing_modules) {
+	print "Note: Modules @missing_modules were not found.\n\n";
+
+	print "While not needed to run Penguin Greetings, these module(s) are\n",
+          "used by some of the secondary ecard sites and provide additional\n",
+          "functionality.  Tests related to these module(s) will be ",
+          "disabled\n\n";
+  sleep 2;
+  }
+}
 
 # Definitions
 $DISTNAME = 'Pgreet';
-$VERSION  = "0.9.8";
+$VERSION  = "0.9.9";
 
 # Prerequisites
 BEGIN { require 5.8.0 }
 use ExtUtils::MakeMaker;
+
+# Check on optional modules
+my @optional_modules = ('HTML::Mason', 'Locale::Maketext');
+
+optional_modules(\@optional_modules);
+
 
 #--- Write the Makefile
 WriteMakefile( # Prerequisites same as for Install.PL

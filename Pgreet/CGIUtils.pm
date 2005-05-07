@@ -8,7 +8,7 @@ package Pgreet::CGIUtils;
 # A Perl CGI-based web card application for LINUX and probably any
 # other UNIX system supporting standard Perl extensions.
 #
-#   Edouard Lagache, elagache@canebas.org, Copyright (C)  2003, 2004
+#   Edouard Lagache, elagache@canebas.org, Copyright (C)  2003-2005
 #
 # Penguin Greetings (pgreet) consists of a Perl CGI script that
 # handles interactions with users wishing to create and/or
@@ -34,18 +34,24 @@ package Pgreet::CGIUtils;
 #
 # This is the Penguin Greetings (pgreet) module for sharing CGI
 # specific routines between the CGI program and associated modules.
+
 # In particular it houses the routines that create the transfer
 # hash reference for Embperl.
 ######################################################################
-# $Id: CGIUtils.pm,v 1.21 2004/03/29 21:25:23 elagache Exp $
+# $Id: CGIUtils.pm,v 1.28 2005/04/15 02:05:32 elagache Exp $
 
-$VERSION = "0.9.8"; # update after release
+$VERSION = "0.9.9"; # update after releases
 
 # Perl modules.
 use CGI qw(:standard escape);
 use CGI::Carp;
-use Embperl;
-use Embperl::Object;
+
+# Conditionally use Wrapper functions for Embedded Perl to avoid
+# bloat of both Embperl and HTML::Mason unless both are in use.
+# use Pgreet::ExecEmbperl qw(ExecEmbperl ExecObjEmbperl);
+use autouse 'Pgreet::ExecEmbperl' => qw(ExecEmbperl ExecObjEmbperl);
+# use Pgreet::ExecMason qw(ExecMason ExecObjMason);
+use autouse 'Pgreet::ExecMason' => qw(ExecMason ExecObjMason);
 
 # Perl Pragmas
 use strict;
@@ -202,10 +208,37 @@ sub ChangeVars {
   return($Transfer);
 }
 
+sub is_bypass {
+#
+# Helper subroutine to test if a given template file is excluded
+# from object-oriented interpretation by either Embperl or Mason
+#
+  my $self = shift;
+  my $template_file = shift;
+  my $bypass_info = shift;
+  my @except_templates;
+
+  # Get a list (even of one item) of excluded files.
+  if (ref($bypass_info) eq 'ARRAY') {
+	@except_templates = @{$bypass_info};
+  } else {
+	@except_templates = ( $bypass_info );
+  }
+
+  foreach my $file (@except_templates) {
+	# If this is an excluded file - forced standard processing.
+	if ($file eq $template_file) {
+      return(1);
+	}
+  }
+
+  return(0); # If we get here, file wasn't excluded
+}
+
 sub Embperl_Execute {
 #
-# Subroutine to call the Embperl execute function (either direct
-# object-oriented version) in a consistent fashion from either
+# Subroutine to call the Embperl execute function wrappers (either
+# direct object-oriented version) in a consistent fashion from either
 # the CGI application of command-line test programs.
 #
   my $self = shift;
@@ -219,20 +252,13 @@ sub Embperl_Execute {
   # If this is an object-oriented call, check if template isn't excluded
   if ($Embperl_Object and exists($Embperl_Object->{'bypass_object'})) {
 
-	# Get a list (even of one item) of excluded files.
-	if (ref($Embperl_Object->{'bypass_object'}) eq 'ARRAY') {
-	  @except_templates = @{$Embperl_Object->{'bypass_object'}};
-	} else {
-	  @except_templates = ( $Embperl_Object->{'bypass_object'} );
+	# If this is an excluded file - forced standard processing.
+	if ( $self->is_bypass($Embperl_file,
+                          $Embperl_Object->{'bypass_object'})
+        ) {
+	  $Embperl_Object = 0; # If excluded file - don't use Embperl::Object
 	}
 
-	foreach my $file (@except_templates) {
-	  # If this is an excluded file - forced standard processing.
-	  if ($file eq $Embperl_file) {
-		$Embperl_Object = 0; # If excluded file - don't use Embperl::Object
-		last;
-	  }
-	}
   }
 
   # If this is still an Embperl::Object call provide all parameters for call
@@ -258,16 +284,58 @@ sub Embperl_Execute {
 	  $Embperl_Object->{'appname'} = "Default App";
 	}
 
-	# Running Object-Oriented version of Embperl
-	Embperl::Object::Execute ($Embperl_Object);
+	# Use wrapper to call Object-Oriented version of Embperl
+	ExecObjEmbperl($Embperl_Object);
 
-  # Use Embperl to process HTML and send to standard out.
+  # Else use wrapper to execute "direct" Embperl
   } else {
-	Embperl::Execute ({inputfile  => "$templatedir/$Embperl_file",
-					   output => \$result_str,
-					   param  => [$Transfer],
-					  }
-					 );
+	ExecEmbperl( {inputfile  => "$templatedir/$Embperl_file",
+				  output => \$result_str,
+				  param  => [$Transfer],
+				 }
+			   );
+
+  }
+
+  return($result_str);
+}
+
+sub Mason_Execute {
+#
+# Subroutine to call the HTML::Mason execute function wrappers (either
+# direct object-oriented version) in a consistent fashion from either
+# the CGI application of command-line test programs.
+#
+  my $self = shift;
+  my $templatedir = shift;
+  my $Mason_file = shift;
+  my $Transfer = shift;
+  my $Mason_Object = shift;
+  my $comp_root = $Mason_Object->{'comp_root'};
+  my $data_dir =  $Mason_Object->{'data_dir'};
+  my $result_str;
+
+  # Create Hash_ref of arguments to Mason::Interp->new
+  my $Interp_obj_args = {comp_root  => $comp_root,
+						 data_dir   => $data_dir,
+						 out_method => \$result_str,
+						};
+
+  # Get relative path from component root for template
+  my $comp_path = "$templatedir/$Mason_file";
+  $comp_path =~ s/$comp_root//;
+
+  # If we have bypass objects call version of wrapper that disables
+  # use of autohandlers.
+  if ( $Mason_Object->{'bypass_object'} and
+       $self->is_bypass($Mason_file,
+						$Mason_Object->{'bypass_object'}) ) {
+
+	  ExecMason($Interp_obj_args, $comp_path, $Transfer);
+
+    # Otherwise use object-oriented Mason wrapper function.
+	} else {
+	  ExecObjMason($Interp_obj_args, $comp_path, $Transfer);
   }
 
   return($result_str);
@@ -296,14 +364,34 @@ Pgreet::CGIUtils - Penguin Greetings shared routines for CGI functions.
   # Create Transfer hash for Embperl
   my $Transfer = $Pg_cgi->ChangeVars();
 
+  # Test if file $Embperl_file is excluded from object-oriented
+  # Embperl interpretation:
+  if ( $Pg_cgi->is_bypass($Embperl_file,
+                          $Embperl_Object->{'bypass_object'})
+     ) { }
+
+  # Execute the Embperl template file: $file in an object-oriented
+  # environment
+  $result_str = $Pg_cgi->Embperl_Execute($templatedir, $file,
+                                         $Transfer,
+                                         $Embperl_Object
+                                         );
+
+  # Execute the Mason template file: $file
+  $result_str = $Pg_cgi->Mason_Execute($templatedir, $file,
+                                       $Transfer,
+                                       $Mason_Object,
+                                      );
+
 
 =head1 DESCRIPTION
 
 The module C<Pgreet::CGIUtils> is the Penguin Greetings module for any
 routines that must be shared between the CGI application and other
-modules.  The first task thus shared is the creation of a hash of
-values to be transferred from Penguin Greetings to Embperl for
-processing of templates.
+modules.  This includes the creation of a hash of values to be
+transferred from Penguin Greetings to Embperl for processing of
+templates and providing a uniform interface between Penguin Greetngs
+and Embedded Perl Enviroments (Embperl and HTML::Mason.)
 
 Like the other modules associated with Penguin Greetings, there is a
 certain bit of bootstrapping involved.  The constructor is used as
@@ -312,11 +400,12 @@ created.  However, that information may not be up-to-date once
 secondary ecard sites have been selected.  So the state of the
 CGIUtils object is updated once an ecard site is definitely selected.
 
-For the matter of setting up the Transfer hash to Embperl the method
-C<ChangeVars> is used in two settings.  It is used within the main CGI
-Application itself and used with C<Pgreet::Error> to allow for error
-templates to have access to all of the state variables that content
-developers would have access to in a normal (non-error) situation.
+For the matter of setting up the Transfer hash to Embperl/Mason, the
+method C<ChangeVars> is used in two settings.  It is used within the
+main CGI Application itself and used with C<Pgreet::Error> to allow
+for error templates to have access to all of the state variables that
+content developers would have access to in a normal (non-error)
+situation.
 
 =head1 CONSTRUCTING A CGIUTILS OBJECT
 
@@ -397,11 +486,58 @@ sample call is provided below:
   # Create Transfer hash for Embperl
   my $Transfer = $Pg_cgi->ChangeVars();
 
+=item is_bypass()
+
+This method tests if a template file is on a list of templates to be
+excluded from object-oriented processing (typically text-only email
+messages.)  It is used in the methods that prep calls to either
+Embperl or Mason but could be of use outside.  A sample call would be
+as follows (assuming an Embperl Object configuration setting:)
+
+  # Test if file $Embperl_file is excluded from object-oriented
+  # Embperl interpretation:
+  if ( $Pg_cgi->is_bypass($Embperl_file,
+                          $Embperl_Object->{'bypass_object'})
+     ) { }
+
+=item Embperl_Execute()
+
+This function provides a uniform interface for Penguin Greetings to
+the Embperl Perl within HTML environment.  The same function is used
+within C<PgTemplateTest> and C<pgreet.pl.cgi>.  It also provides the
+abstraction that allows for Embperl to be 'autoused' as needed at
+runtime.  It requires 3 to 4 arguments: the directory where templates
+are stored, the filename of the template to execute, a C<$Transfer>
+styled hash-ref of parameters to the template and if appropriate the
+C<Embperl_Object> configuration hash-ref.  The method call returns a
+string containing the rendered HTML from the template.A sample call is
+shown below:
+
+  # Execute the Embperl template file: $file in an object-oriented
+  # environment
+  $result_str = $Pg_cgi->Embperl_Execute($templatedir, $file,
+                                         $Transfer,
+                                         $Embperl_Object
+                                        );
+
+=item Mason_Execute()
+
+This function provides for the HTML::Mason environment the same
+uniform interface that Embperl_Execute provides for Embperl.  It takes
+the same arguments and returns the rendered HTML as a string.  A
+sample call is shown below:
+
+  # Execute the Mason template file: $file
+  $result_str = $Pg_cgi->Mason_Execute($templatedir, $file,
+                                       $Transfer,
+                                       $Mason_Object,
+                                      );
+
 =back
 
 =head1 COPYRIGHT
 
-Copyright (c) 2003, 2004 Edouard Lagache
+Copyright (c) 2003-2005 Edouard Lagache
 
 This software is released under the GNU General Public License, Version 2.
 For more information, see the COPYING file included with this software or
@@ -417,12 +553,12 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.8
+0.9.9
 
 =head1 SEE ALSO
 
-syslog, L<Pgreet>, L<Pgreet::Config>, L<Pgreet::Error>, L<Log::Dispatch>,
-L<Log::Dispatch::File>, L<Log::Dispatch::Syslog>, L<CGI::Carp>
+L<Pgreet>, L<Pgreet::Config>, L<Pgreet::Error>, L<Pgreet::ExecEmbperl>,
+L<Pgreet::ExecMason>, L<CGI::Carp>
 
 =cut
 
