@@ -37,9 +37,9 @@ package Pgreet::I18N::fr_fr;
 # contains the French translations of strings used in Penguin
 # Greetings secondary ecard sites.
 ######################################################################
-# $Id: fr_fr.pm,v 1.23 2005/04/15 16:29:05 elagache Exp $
+# $Id: fr_fr.pm,v 1.24 2005/05/31 16:44:39 elagache Exp $
 
-$VERSION = "0.9.9"; # update after release
+$VERSION = "1.0.0"; # update after release
 
 use base qw(Pgreet::I18N);
 use strict;
@@ -650,7 +650,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.9
+1.0.0
 
 =head1 SEE ALSO
 

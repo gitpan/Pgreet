@@ -36,9 +36,9 @@ package Pgreet::Error;
 # handling.  It defines common conditions that are then handled
 # differently by the CGI application and the system daemon.
 ######################################################################
-# $Id: Error.pm,v 1.25 2005/04/16 22:16:49 elagache Exp $
+# $Id: Error.pm,v 1.26 2005/05/31 16:44:39 elagache Exp $
 
-$VERSION = "0.9.9"; # update after release
+$VERSION = "1.0.0"; # update after release
 
 # Module exporter declarations
 @ISA       = qw(Exporter);
@@ -484,7 +484,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.9
+1.0.0
 
 =head1 SEE ALSO
 

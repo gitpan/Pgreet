@@ -37,9 +37,9 @@ package Pgreet::I18N::i_default;
 # sets up the initialization of the 'Locale::Maketext' system and
 # defaults the project language to English
 ######################################################################
-# $Id: i_default.pm,v 1.2 2005/04/15 16:29:05 elagache Exp $
+# $Id: i_default.pm,v 1.3 2005/05/31 16:44:39 elagache Exp $
 
-$VERSION = "0.9.9"; # update after release
+$VERSION = "1.0.0"; # update after release
 
 # Default directly to en_us
 use base qw(Pgreet::I18N);
@@ -74,7 +74,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.9
+1.0.0
 
 =head1 SEE ALSO
 

@@ -38,9 +38,9 @@ require Exporter;
 # to load either Embperl or Mason on the fly and spare users of
 # only one Embedded Perl solution the overhead of the other.
 ######################################################################
-# $Id: ExecEmbperl.pm,v 1.2 2005/04/15 02:05:32 elagache Exp $
+# $Id: ExecEmbperl.pm,v 1.3 2005/05/31 16:44:39 elagache Exp $
 
-$VERSION = "0.9.9"; # update after release
+$VERSION = "1.0.0"; # update after release
 
 use Embperl;
 use Embperl::Object;
@@ -124,7 +124,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.9
+1.0.0
 
 =head1 SEE ALSO
 

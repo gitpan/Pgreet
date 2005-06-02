@@ -36,7 +36,7 @@ package Pgreet::I18N::en_us;
 # ecard sites.  Since the default project language is en_us, this is
 # an effectively empty file.
 ######################################################################
-# $Id: en_us.pm,v 1.2 2005/04/15 16:29:05 elagache Exp $
+# $Id: en_us.pm,v 1.3 2005/05/31 16:44:39 elagache Exp $
 
 # This class just zero-derives from the project base class.
 use base qw(Pgreet::I18N);
@@ -71,7 +71,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.9
+1.0.0
 
 =head1 SEE ALSO
 

@@ -36,9 +36,9 @@ package Pgreet::DaemonUtils;
 # specific routines between the application daemon and command line
 # utilities that have similar functionality.
 ######################################################################
-# $Id: DaemonUtils.pm,v 1.14 2005/04/16 22:16:49 elagache Exp $
+# $Id: DaemonUtils.pm,v 1.15 2005/05/31 16:44:38 elagache Exp $
 
-$VERSION = "0.9.9"; # update after release
+$VERSION = "1.0.0"; # update after release
 
 # Perl modules.
 use DB_File;
@@ -493,7 +493,7 @@ Edouard Lagache <pgreetdev@canebas.org>
 
 =head1 VERSION
 
-0.9.9
+1.0.0
 
 =head1 SEE ALSO
 

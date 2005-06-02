@@ -33,7 +33,7 @@ sub optional_modules {
 
 # Definitions
 $DISTNAME = 'Pgreet';
-$VERSION  = "0.9.9";
+$VERSION  = "1.0.0";
 
 # Prerequisites
 BEGIN { require 5.8.0 }
